@@ -1,3 +1,7 @@
 Basic Simple NLP.ipynb
 .ipynb_checkpoints 
 .env
+__pycache__
+.vscode
+nlpModel.joblib
+zztesting.py

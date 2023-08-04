@@ -1,11 +1,13 @@
 import nltk
 import random
 import string
+import time
 import os
 from db_config import Db_Config
 from dotenv import load_dotenv
 from function import Function
-import joblib
+
+start = time.time()
 
 load_dotenv()
 
@@ -24,5 +26,8 @@ text = "Mata kering dapat diatasi dengan istirahat reguler."
 
 hasil = func.findResult(dataAll, text)
 print(hasil)
+
+finish = time.time()
+print(f"Lama waktu : {finish - start :2f} detik")
 
 

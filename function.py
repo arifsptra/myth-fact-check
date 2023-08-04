@@ -3,6 +3,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from sklearn.ensemble import RandomForestClassifier
+import joblib
 
 class Function:
     def preprocess_text(self, text):
@@ -21,3 +22,4 @@ class Function:
         textVec = vectorizer.transform([text])
         prediksi = rfc.predict(textVec)[0]
         return 'Fakta' if prediksi=='fakta' else 'Mitos'
+    
