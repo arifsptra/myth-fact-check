@@ -1,0 +1,5 @@
+DATABASE_HOST="localhost"
+DATABASE_USERNAME="root"
+DATABASE_PASSWORD=""
+DATABASE_DB_NAME="db_mfcheck"
+DATABASE_TABLE="statement"
