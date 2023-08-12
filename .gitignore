@@ -1,4 +1,4 @@
-Basic Simple NLP.ipynb
+Testing Fakta Mitos.ipynb
 .ipynb_checkpoints 
 .env
 __pycache__
@@ -6,3 +6,4 @@ __pycache__
 nlpModel.joblib
 zztesting.py
 nlpModel.keras
+cobamodel.h5
