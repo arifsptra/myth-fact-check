@@ -9,7 +9,19 @@
       rel="stylesheet"
     />
   </head>
-  <body class="bg-gray-100">
+  <body class="bg-gray-100 px-10">
     <h1 class="text-center">Hello World!</h1>
+    <div class="">
+      <h1>Input Form</h1>
+      <form method="POST">
+        <label for="inputUser">Masukkan Nama :</label><br>
+        <input type="text" name="userInput" id="userInput" /><br>
+        <button type="submit" class="bg-green-500 rounded p-1">Submit</button>
+      </form>
+    </div>
+    {% if userInput: %}
+    <h2>Your Input:</h2>
+    <p>{{ userInput }}</p>
+    {% endif %}
   </body>
 </html>

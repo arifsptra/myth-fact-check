@@ -5,3 +5,4 @@ __pycache__
 .vscode
 nlpModel.joblib
 zztesting.py
+nlpModel.keras
