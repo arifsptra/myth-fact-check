@@ -1,4 +1,4 @@
-Testing Fakta Mitos.ipynb
+Basic Simple NLP.ipynb
 .ipynb_checkpoints 
 .env
 __pycache__
@@ -8,3 +8,4 @@ zztesting.py
 nlpModel.keras
 cobamodel.h5
 w2v.bin
+w2v.h5
