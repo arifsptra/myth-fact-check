@@ -7,3 +7,4 @@ nlpModel.joblib
 zztesting.py
 nlpModel.keras
 cobamodel.h5
+w2v.bin
