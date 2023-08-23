@@ -1,7 +1,12 @@
-Basic Simple NLP.ipynb
-.ipynb_checkpoints 
-.env
-__pycache__
-.vscode
-nlpModel.joblib
-zztesting.py
+# IDE Files
+#-------------------------
+/nbproject/
+.idea/*
+
+## Sublime Text cache files
+*.tmlanguage.cache
+*.tmPreferences.cache
+*.stTheme.cache
+*.sublime-workspace
+*.sublime-project
+
