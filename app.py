@@ -8,8 +8,13 @@ from keras.models import load_model
 app = Flask(__name__)
 dibaca_h5_model = load_model("bisaDibaca.h5")
 dibaca_bin_model = gensim.models.Word2Vec.load("bisaDibaca.bin")
+mata_h5_model = load_model("temaMata.h5")
+mata_bin_model = gensim.models.Word2Vec.load("temaMata.bin")
 w2v_h5_model = load_model("w2v.h5")
 w2v_bin_model = gensim.models.Word2Vec.load("w2v.bin")
+
+def train_model():
+    pass
 
 def clean_and_lower(text):
     cleaned_text = ''.join(char.lower() for char in text if char.isalnum() or char.isspace())
@@ -37,12 +42,21 @@ def home():
         bisa_dibaca_vector = get_avg_word_vectors(cleanKata, dibaca_bin_model)
         bisa_dibaca_prediksi = dibaca_h5_model.predict(bisa_dibaca_vector)
         bisa = True if bisa_dibaca_prediksi[0]>=0.5 else False
+        print("Bisa Dibaca :", bisa_dibaca_prediksi)
         if bisa :
-            mitos_fakta_vectors = get_avg_word_vectors(cleanKata, w2v_bin_model)
-            predictions = w2v_h5_model.predict(mitos_fakta_vectors)
-            hasil = "Fakta" if predictions[0]>=0.5 else "Mitos"
+            tema_mata_vector = get_avg_word_vectors(cleanKata, mata_bin_model)
+            tema_mata_prediksi = mata_h5_model.predict(tema_mata_vector)
+            mata = True if tema_mata_prediksi[0]>=0.5 else False
+            print("Tema Mata :", tema_mata_prediksi)
+            if mata :
+                mitos_fakta_vectors = get_avg_word_vectors(cleanKata, w2v_bin_model)
+                predictions = w2v_h5_model.predict(mitos_fakta_vectors)
+                hasil = "Fakta" if predictions[0]>=0.5 else "Mitos"
+                print("Fakta Mitos :", predictions)
+            else :
+                hasil = "Bukan tentang mata"
         else :
-            hasil = "Tidak Bisa Dibaca Bang"
+            hasil = "Inputan Sementara Tidak Dikenal"
         return render_template('index.html', userInput = hasil)
     return render_template('index.html', userInput = None)
 
