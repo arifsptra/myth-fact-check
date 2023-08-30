@@ -50,6 +50,8 @@ def train_model():
                                       result.history['accuracy'][-1],
                                       result.history['val_loss'][-1],
                                       result.history['val_accuracy'][-1]]})
+            model.save("bisaDibaca.h5")
+            word2vec.save("bisaDibaca.bin")
         if i == 1:
             model = build_model_content(input_dim=X_train_avg.shape[1])
             result = model.fit(X_train_avg, np.array(y_train), batch_size=5, epochs=20, verbose=1, validation_data=(X_test_avg, np.array(y_test)))
@@ -57,6 +59,8 @@ def train_model():
                                          result.history['accuracy'][-1],
                                          result.history['val_loss'][-1],
                                          result.history['val_accuracy'][-1]]})
+            model.save("temaMata.h5")
+            word2vec.save("temaMata.bin")
         if i == 2:
             model = build_model_category(input_dim=X_train_avg.shape[1])
             result = model.fit(X_train_avg, np.array(y_train), batch_size=3, epochs=20, verbose=1, validation_data=(X_test_avg, np.array(y_test)))
@@ -64,6 +68,8 @@ def train_model():
                                           result.history['accuracy'][-1],
                                           result.history['val_loss'][-1],
                                           result.history['val_accuracy'][-1]]})
+            model.save("w2v.h5")
+            word2vec.save("w2v.bin")
     return summary
 
 def build_model_read(input_dim):
