@@ -1,22 +1,113 @@
-from flask import Flask, render_template, request, jsonify
-import joblib
+from flask import Flask, request, jsonify, render_template
+from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
+import os
+from dotenv import load_dotenv
 import numpy as np
-import keras
 import gensim
 from keras.models import Sequential
-from keras.layers import Dense, Embedding, Flatten
+from keras.layers import Dense
 from keras.models import load_model
 import requests
 from sklearn.model_selection import train_test_split
 
-app = Flask(__name__)
-dibaca_h5_model = load_model("bisaDibaca.h5")
-dibaca_bin_model = gensim.models.Word2Vec.load("bisaDibaca.bin")
-mata_h5_model = load_model("temaMata.h5")
-mata_bin_model = gensim.models.Word2Vec.load("temaMata.bin")
-w2v_h5_model = load_model("w2v.h5")
-w2v_bin_model = gensim.models.Word2Vec.load("w2v.bin")
+load_dotenv()
 
+app = Flask(__name__)
+
+app_name = os.environ.get("APP_NAME")
+db_host = os.environ.get("DB_HOST")
+db_user = os.environ.get("DB_USER")
+db_password = os.environ.get("DB_PASSWORD")
+db_name = os.environ.get("DB_NAME")
+
+app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql://{db_user}:{db_password}@{db_host}/{db_name}"
+db = SQLAlchemy(app)
+CORS(app)
+
+class Sentences(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    sentence = db.Column(db.String(255))
+    read = db.Column(db.Integer)
+    content = db.Column(db.Integer, default=2)
+    category = db.Column(db.Integer, default=2)
+
+class Predicts(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    sentence = db.Column(db.String(255))
+    result = db.Column(db.String(255))
+
+@app.route('/sentences', methods=['POST', 'GET', 'DELETE'])
+def cr_sentences():
+    if request.method == 'POST':
+        data = request.json
+        new_sentence = Sentences(sentence=data['sentence'], read=data['read'], content=data['content'], category=data['category'])
+        db.session.add(new_sentence)
+        db.session.commit()
+        return jsonify({'message': 'Sentence created successfully'})
+
+    if request.method == 'GET':
+        read_no = Sentences.query.filter_by(read=0)
+        read_yes = Sentences.query.filter_by(read=1)
+        content_no = Sentences.query.filter_by(content=0)
+        content_yes = Sentences.query.filter_by(content=1)
+        category_no = Sentences.query.filter_by(category=0)
+        category_yes = Sentences.query.filter_by(category=1)
+        return jsonify({
+                'reads':[
+                    {'0': [rn.sentence for rn in read_no]},
+                    {'1': [ry.sentence for ry in read_yes]}
+                ],
+                'contents':[
+                    {'0': [con.sentence for con in content_no]},
+                    {'1': [coy.sentence for coy in content_yes]}
+                ],
+                'categories':[
+                    {'0': [can.sentence for can in category_no]},
+                    {'1': [cay.sentence for cay in category_yes]}
+                ],})
+    
+    if request.method == 'DELETE':
+        db.session.query(Sentences).delete()
+        db.session.commit()
+        return jsonify({'message': 'All Sentence deleted successfully'})
+
+@app.route('/sentences/<int:id>', methods=['GET', 'PUT', 'DELETE'])
+def ud_sentences(id):
+    sentence = Sentences.query.get(id)
+    if request.method == 'GET':
+        if sentence:
+            return jsonify({'sentence': sentence.sentence, 'read': sentence.read, 'content': sentence.content, 'category': sentence.category })
+        else:
+            return jsonify({'message': 'Sentence not found'}), 404
+    
+    if request.method == 'PUT':
+        data = request.json
+        if sentence:
+            sentence.sentence = data['sentence']
+            sentence.read = data['read']
+            sentence.content = data['content']
+            sentence.category = data['category']
+            db.session.commit()
+            return jsonify({'message': 'Sentence updated successfully'})
+        else:
+            return jsonify({'message': 'Sentence not found'}), 404
+    
+    if request.method == 'DELETE':
+        if sentence:
+            db.session.delete(sentence)
+            db.session.commit()
+            return jsonify({'message': 'Sentence deleted successfully'})
+        else:
+            return jsonify({'message': 'Sentence not found'}), 404
+
+# load all models
+dibaca_h5_model = load_model("model/bisaDibaca.h5")
+dibaca_bin_model = gensim.models.Word2Vec.load("model/bisaDibaca.bin")
+mata_h5_model = load_model("model/temaMata.h5")
+mata_bin_model = gensim.models.Word2Vec.load("model/temaMata.bin")
+w2v_h5_model = load_model("model/w2v.h5")
+w2v_bin_model = gensim.models.Word2Vec.load("model/w2v.bin")
 
 def train_model():
     url = "http://127.0.0.1:5000/sentences"
@@ -26,13 +117,13 @@ def train_model():
     for i in range(0,3):
         if i == 0:
             tidak = data['reads'][0]['0']
-            iya = data['reads'][0]['1']
+            iya = data['reads'][0].get('1', "oke")
         if i == 1:
             tidak = data['contents'][0]['0']
-            iya = data['contents'][0]['1']
+            iya = data['contents'][0].get('1', "oke")
         if i == 2:
             tidak = data['categories'][0]['0']
-            iya = data['categories'][0]['1']
+            iya = data['categories'][0].get('1', "oke")
         labelledTidak = [(kalimat, 0) for kalimat in tidak]
         labelledIya = [(kalimat, 1) for kalimat in iya]
         trainData = labelledTidak + labelledIya
@@ -50,8 +141,8 @@ def train_model():
                                       result.history['accuracy'][-1],
                                       result.history['val_loss'][-1],
                                       result.history['val_accuracy'][-1]]})
-            model.save("bisaDibaca.h5")
-            word2vec.save("bisaDibaca.bin")
+            model.save("model/bisaDibaca.h5")
+            word2vec.save("model/bisaDibaca.bin")
         if i == 1:
             model = build_model_content(input_dim=X_train_avg.shape[1])
             result = model.fit(X_train_avg, np.array(y_train), batch_size=5, epochs=20, verbose=1, validation_data=(X_test_avg, np.array(y_test)))
@@ -59,8 +150,8 @@ def train_model():
                                          result.history['accuracy'][-1],
                                          result.history['val_loss'][-1],
                                          result.history['val_accuracy'][-1]]})
-            model.save("temaMata.h5")
-            word2vec.save("temaMata.bin")
+            model.save("model/temaMata.h5")
+            word2vec.save("model/temaMata.bin")
         if i == 2:
             model = build_model_category(input_dim=X_train_avg.shape[1])
             result = model.fit(X_train_avg, np.array(y_train), batch_size=3, epochs=20, verbose=1, validation_data=(X_test_avg, np.array(y_test)))
@@ -68,8 +159,8 @@ def train_model():
                                           result.history['accuracy'][-1],
                                           result.history['val_loss'][-1],
                                           result.history['val_accuracy'][-1]]})
-            model.save("w2v.h5")
-            word2vec.save("w2v.bin")
+            model.save("model/w2v.h5")
+            word2vec.save("model/w2v.bin")
     return summary
 
 def build_model_read(input_dim):
@@ -129,36 +220,52 @@ def get_avg_word_vectors(sentences, model):
 
 @app.route('/train', methods=['POST'])
 def train():
-    summary = train_model()
-    return render_template('addTrain.html', hasil = summary)
+    if request.method == 'POST':
+        summary = train_model()
+        return jsonify({"result": summary})
 
-
-# Route for the root page
-@app.route('/', methods=['GET', 'POST'])
-def home():
-    if request.method == 'POST' :
-        user_input = list(request.form['userInput'])
+@app.route('/predicts', methods=['GET', 'POST'])
+def manage_predicts():
+    if request.method == 'GET':
+        predicts = Predicts.query.all()
+        return jsonify({"data":[{'sentence': c.sentence, 'result': c.result} for c in predicts]})
+    
+    if request.method == 'POST':
+        data = request.json
+        user_input = data['sentence']
         cleanKata = [''.join(clean_and_lower(kalimat) for kalimat in user_input)]
         bisa_dibaca_vector = get_avg_word_vectors(cleanKata, dibaca_bin_model)
         bisa_dibaca_prediksi = dibaca_h5_model.predict(bisa_dibaca_vector)
         bisa = True if bisa_dibaca_prediksi[0]>=0.5 else False
         print("Bisa Dibaca :", bisa_dibaca_prediksi)
+
         if bisa :
             tema_mata_vector = get_avg_word_vectors(cleanKata, mata_bin_model)
             tema_mata_prediksi = mata_h5_model.predict(tema_mata_vector)
             mata = True if tema_mata_prediksi[0]>=0.5 else False
             print("Tema Mata :", tema_mata_prediksi)
+
             if mata :
                 mitos_fakta_vectors = get_avg_word_vectors(cleanKata, w2v_bin_model)
                 predictions = w2v_h5_model.predict(mitos_fakta_vectors)
                 hasil = "Fakta" if predictions[0]>=0.5 else "Mitos"
                 print("Fakta Mitos :", predictions)
+
             else :
                 hasil = "Bukan tentang mata"
+
         else :
             hasil = "Inputan Sementara Tidak Dikenal"
-        return render_template('index.html', userInput = hasil)
-    return render_template('index.html', userInput = None)
+
+        new_predict = Predicts(sentence=data['sentence'], result=hasil)
+        db.session.add(new_predict)
+        db.session.commit()
+
+        return jsonify({'result': hasil})
+
+@app.route('/')
+def hello():
+    return render_template('index.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
